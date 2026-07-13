@@ -1,1 +1,2 @@
-# Project-10-CDK-Version 
+# Welcome to Project 10 v2 - CDK with Typescript
+
