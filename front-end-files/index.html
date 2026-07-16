@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groot Cinema</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="marquee-frame">
+        <div class="marquee-bulbs" aria-hidden="true"></div>
+        <header class="marquee">
+            <p class="eyebrow">Now Screening</p>
+            <h1 class="marquee-title">Groot Cinema</h1>
+            <div class="ticker" role="status" aria-live="polite">
+                <div class="ticker-track" id="available-movies">Loading tonight's lineup&hellip;</div>
+            </div>
+        </header>
+        <div class="marquee-bulbs marquee-bulbs--bottom" aria-hidden="true"></div>
+    </div>
+
+    <main class="lobby">
+        <section class="booth">
+            <p class="booth-label">Box Office</p>
+            <h2>Find your film</h2>
+            <p class="booth-copy">Type a title to pull up its runtime, rating and story.</p>
+            <div class="booth-form">
+                <input type="text" id="movie-id-input" placeholder="e.g. Fast and Furious" autocomplete="off">
+                <button type="button" id="search-btn">Search</button>
+            </div>
+        </section>
+
+        <section class="results" aria-live="polite">
+            <div class="results-grid" id="table-body">
+                <p class="results-empty">Search above to see what's playing tonight.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="credits">
+        <p>Grab your popcorn.</p>
+        <p>Powered by AWS CDK + TypeScript</p>
+        <p>No AI used to generate the code!!!</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

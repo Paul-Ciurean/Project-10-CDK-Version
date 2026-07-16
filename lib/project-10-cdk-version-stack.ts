@@ -1,9 +1,10 @@
 import * as cdk from 'aws-cdk-lib/core';
 import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
-import * as api from 'aws-cdk-lib/aws-apigateway';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
@@ -27,7 +28,6 @@ export class Project10CdkVersionStack extends cdk.Stack {
       bucketName: 'my-backend-bucket-cinema-groot',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
-
 
     // DEFINE THE CLOUDFRONT DISTRIBUTION
 
@@ -71,6 +71,11 @@ export class Project10CdkVersionStack extends cdk.Stack {
         TABLE_NAME: dynamoDB.tableName,
         SNS_TOPIC_ARN: snsTopic.topicArn,
       },
+      logGroup: new logs.LogGroup(this, 'UploadLambdaLogGroup', {
+        logGroupName: '/aws/lambda/upload_lambda',
+        retention: logs.RetentionDays.ONE_WEEK,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
     });
 
     const filter: s3.NotificationKeyFilter = { suffix: '.csv' };
@@ -83,8 +88,15 @@ export class Project10CdkVersionStack extends cdk.Stack {
       runtime: lambda.Runtime.PYTHON_3_12,
       handler: 'search-lambda.lambda_handler',
       code: lambda.Code.fromAsset('lambda/search-lambda.zip'),
+      environment: {
+        TABLE_NAME: dynamoDB.tableName
+      },
+      logGroup: new logs.LogGroup(this, 'SearchLambdaLogGroup', {
+        logGroupName: '/aws/lambda/search_lambda',
+        retention: logs.RetentionDays.ONE_WEEK,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
     });
-
 
     // Update Function 
 
@@ -93,11 +105,112 @@ export class Project10CdkVersionStack extends cdk.Stack {
       runtime: lambda.Runtime.PYTHON_3_12,
       handler: 'update-lambda.lambda_handler',
       code: lambda.Code.fromAsset('lambda/update-lambda.zip'),
+      environment: {
+        TABLE_NAME: dynamoDB.tableName
+      },
+      logGroup: new logs.LogGroup(this, 'UpdateLambdaLogGroup', {
+        logGroupName: '/aws/lambda/update_lambda',
+        retention: logs.RetentionDays.ONE_WEEK,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
     });
 
-    // Define the API Gateway
+    // DEFINE THE API GATEWAY
 
-    // Define the IAM roles and policies
+    // Search API Gateway
+
+    const searchApi = new apigateway.RestApi(this, 'SearchApi', {
+      endpointConfiguration: {
+        types: [apigateway.EndpointType.REGIONAL],
+      },
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+      },
+    })
+
+    const searchResource = searchApi.root.addResource('search_api');
+
+    searchResource.addMethod('GET', new apigateway.LambdaIntegration(searchLambda),{
+      methodResponses: [
+        {
+          statusCode: '200',
+          responseParameters: {
+            'method.response.header.Access-Control-Allow-Origin': true,
+            'method.response.header.Access-Control-Allow-Headers': true,
+            'method.response.header.Access-Control-Allow-Methods': true,
+          },
+          responseModels: {
+            'application/json': apigateway.Model.EMPTY_MODEL,
+          },
+        },
+      ],
+    });
+
+    const searchDeployment = new apigateway.Deployment(this, 'SearchApiDeployment', {
+      api: searchApi,
+    });
+
+    // Update API Gateway
+
+    const updateApi = new apigateway.RestApi(this, 'UpdateApi', {
+      endpointConfiguration: {
+        types: [apigateway.EndpointType.REGIONAL],
+      },
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+      },
+    })
+
+    const updateResource = updateApi.root.addResource('update_api');
+
+    updateResource.addMethod('GET', new apigateway.LambdaIntegration(updateLambda),{
+      methodResponses: [
+        {
+          statusCode: '200',
+          responseParameters: {
+            'method.response.header.Access-Control-Allow-Origin': true,
+            'method.response.header.Access-Control-Allow-Headers': true,
+            'method.response.header.Access-Control-Allow-Methods': true,
+          },
+          responseModels: {
+            'application/json': apigateway.Model.EMPTY_MODEL,
+          },
+        },
+      ],
+    });
+
+    const updateDeployment = new apigateway.Deployment(this, 'UpdateApiDeployment', {
+      api: updateApi,
+    });
+
+    // DEFINE THE IAM POLICIES 
+
+    searchLambda.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        "logs:CreateLogStream",
+        "dynamodb:Scan",
+        "dynamodb:Query",
+        "logs:CreateLogGroup",
+        "logs:PutLogEvents"
+      ],
+      effect: iam.Effect.ALLOW,
+      resources: ['*'],
+    }));
+
+    updateLambda.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        "logs:CreateLogStream",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem",
+        "dynamodb:PutItem",
+        "logs:CreateLogGroup",
+        "logs:PutLogEvents"
+      ],
+      effect: iam.Effect.ALLOW,
+      resources: ['*'],
+    }));
 
     uploadLambdaToDynamoDB.addToRolePolicy(new iam.PolicyStatement({
       actions: [
@@ -123,6 +236,5 @@ export class Project10CdkVersionStack extends cdk.Stack {
         snsTopic.topicArn,
         backendBucket.bucketArn + '/*'],
     }));
-
   }
 }
