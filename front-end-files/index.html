@@ -10,6 +10,19 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="intro-overlay" id="intro-overlay">
+        <video
+            id="intro-video"
+            class="intro-video"
+            src="intro.mp4"
+            autoplay
+            muted
+            playsinline
+            preload="auto"
+        ></video>
+        <button type="button" class="intro-skip" id="intro-skip">Skip Intro</button>
+        <button type="button" class="intro-unmute" id="intro-unmute" aria-label="Unmute intro video">🔇</button>
+    </div>
 
     <div class="marquee-frame">
         <div class="marquee-bulbs" aria-hidden="true"></div>
@@ -22,7 +35,6 @@
         </header>
         <div class="marquee-bulbs marquee-bulbs--bottom" aria-hidden="true"></div>
     </div>
-
     <main class="lobby">
         <section class="booth">
             <p class="booth-label">Box Office</p>
@@ -33,20 +45,17 @@
                 <button type="button" id="search-btn">Search</button>
             </div>
         </section>
-
         <section class="results" aria-live="polite">
             <div class="results-grid" id="table-body">
                 <p class="results-empty">Search above to see what's playing tonight.</p>
             </div>
         </section>
     </main>
-
     <footer class="credits">
         <p>Grab your popcorn.</p>
         <p>Powered by AWS CDK + TypeScript</p>
         <p>No AI used to generate the code!!!</p>
     </footer>
-
     <script src="script.js"></script>
 </body>
 </html>
